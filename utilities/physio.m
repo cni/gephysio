@@ -9,77 +9,109 @@
 % Brian to complete
 % st = scitran('cni');
 %
+% Or use Flywheel MATLAB SDK. fw = flywheel.Flywheel(apikey)
+% addpath('~/Documents/MATLAB/'); fw = setup_flywheel;
 
-%%
-chdir(fullfile(gpRootPath,'data','gephysio1'));
+%% Download files from Flywheel if fw client exists
+gpRootPath = gpRootPath;
+dataRootPath = fullfile(gpRootPath,'data');
 
-% These are the pulsimetry values measured every 10 ms
-foo = readmatrix('PPGData_cni_epi_0220202113_25_28_493');
+% Get the physio data and acquisition information from Flywheel if SDK exists 
+if exist('fw', 'var')
+    project_label = 'iris';
+    session_date = '2021-02-20';
+    acquisition = 'resting_2';
+    proj = fw.projects.findFirst(['label=' project_label]);
+    sess = proj.sessions.find(['created>' session_date]);
+    sess = sess{1};
+    acq = sess.acquisitions.find(['label=' acquisition]);
+    acq = acq{1};
+    files = acq.files;
+    for f=1:numel(files)
+        if strcmp(files{f}.type,'gephysio')  % download the *.gephysio.zip and unzip to gephysio/data
+            acq.downloadFile(files{f}.name, fullfile(dataRootPath, files{f}.name));
+            unzip(fullfile(dataRootPath, files{f}.name), dataRootPath);
+            [~,subfolder,~] = fileparts(files{f}.name);
+            datadir = fullfile(dataRootPath, subfolder);
+        end
+        if strcmp(files{f}.type,'dicom')   % get one dicom image from the dicom archive
+            zipInfo = acq.getFileZipInfo(files{f}.name);
+            dcmCount = numel(zipInfo.members);
+            dcmName = zipInfo.members{1}.path;
+            acq.downloadFileZipMember(files{f}.name, dcmName, fullfile(datadir, '1.dcm'));
+            dcm = dicominfo(fullfile(datadir, '1.dcm'));
+            % Get number of volumes, TR from the dicom header. Assuming this is a complete scan
+            nvols = dcm.NumberOfTemporalPositions;  
+            TR = dcm.RepetitionTime;
+            scan_duration = TR * nvols;
+       end
+    end
+else   % or manually prepare data
+    datadir = fullfile(dataRootPath, 'gephysio1');
+    TR = 2000;
+    nvols = 240;
+    scan_duration = TR * nvols;
+end
 
+%% pre-set some parameters
+ppg_sample = 10;        % PPG data samples at 10ms
+resp_sample = 40;       % Respiratory data samples  at 40 ms
+
+plot_window = 10000;    % Duration of physio data to plot for inspection (10 seconds)
+
+
+%% Pulsimetry data
+f = dir(fullfile(datadir,'PPGData*'));
+foo = readmatrix(fullfile(f.folder, f.name));
 ppg = foo(:,2);
+f = dir(fullfile(datadir,'PPGTrig*'));
+ppg_trig = readmatrix(fullfile(f.folder, f.name)); % These are times that the PPG detects as an event
 
-% We convert from 10ms to 1 ms values
-t = ((1:numel(ppg))-1)*10;
-
-figure; 
+% Convert to millisecond. 
+ppg_t = ((1:numel(ppg))-1)*ppg_sample;
+ppg_trig = ppg_trig*ppg_sample;
 
 % Choose a range of times to plot
-start = 10000;
-stop  = 30000;
-r = logical(start < t) & logical(t < stop);
+start = ppg_t(end) - plot_window;
+stop  = ppg_t(end);
 
-plot(t(r),ppg(r));
-xlabel('Time (ms)');
-ylabel('PPG value');
+ppg_r = logical(start < ppg_t) & logical(ppg_t < stop);
+ppg_mx = max(ppg(ppg_r)); ppg_mn = min(ppg(ppg_r));
+ppg_lst = logical(start < ppg_trig) & logical (ppg_trig < stop);
 
-%% These are times that the PPG detects as an event
-
-trig = readmatrix('PPGTrig_cni_epi_0220202113_25_28_493');
-
-% Trigger in milliseconds
-trig = trig*10;
-
-lst = logical(start < trig) & logical (trig < stop);
-
-% lst = (trig > r(1)) & (trig < r(end));
-
-% Convert to milliseconds
-% val = trig(lst)*10;
-
-hold on;
-mx = max(ppg(r)); mn = min(ppg(r));
-% for ii=1:numel(lst)
-%     line([trig(lst),trig(lst)],[mn,mx],'Color','k');
-% end
-
-set(gca,'ylim',[mn mx]);
-plot(trig(lst),ones(size(trig(lst)))*mx*0.9,'ko');
+figure; subplot(2,1,1);
+plot(ppg_t(ppg_r),ppg(ppg_r)); hold on;
+plot(ppg_trig(ppg_lst),ones(size(ppg_trig(ppg_lst)))*ppg_mx,'ko');
+xlabel('Time (ms)'); ylabel('PPG recorded data'); set(gca,'ylim',[ppg_mn ppg_mx], 'xlim',[start, stop]);
 
 %%  Respiration data
-
-foo = readmatrix('RESPData_cni_epi_0220202113_25_28_493');
-
+f = dir(fullfile(datadir,'RESPData*'));
+foo = readmatrix(fullfile(f.folder, f.name));
 resp = foo(:,2);
+f = dir(fullfile(datadir,'RESPTrig*'));
+resp_trig = readmatrix(fullfile(f.folder, f.name));
 
-% The samples were at 40 ms, not 10 ms
-t = ((1:numel(resp))-1)*40;
+resp_t = ((1:numel(resp))-1)*resp_sample;
+resp_trig = resp_trig*resp_sample;
+resp_r = logical(start < resp_t) & logical(resp_t < stop);
+resp_lst = logical(start < resp_trig) & logical (resp_trig < stop);
+resp_mx = max(resp(resp_r)); resp_mn = min(resp(resp_r));
 
-figure; 
+subplot(2,1,2);
+plot(resp_t(resp_r),resp(resp_r)); hold on;
+plot(resp_trig(resp_lst),ones(size(resp_trig(resp_lst)))*resp_mx,'ko');
+xlabel('Time (ms)'); ylabel('RESP recorded data'); set(gca,'ylim',[resp_mn resp_mx],'xlim',[start, stop]);
 
-r = 9000:10000;
+%% Write out simple summary of the data
+s.total_recording_time = ppg_t(end);    % in milliseconds
+s.scan_duration = scan_duration;        % in milliseconds
+s.scan_start = s.total_recording_time - scan_duration;
+s.ppg_data_during_scan  = ppg((ppg_t(end) - scan_duration)/ppg_sample : end);     % one data point per 10ms
+s.ppg_trig_during_scan  = ppg_trig(ppg_trig > s.scan_start) - s.scan_start;       % time position of events in milliseconds
+s.resp_data_during_scan = resp((resp_t(end) - scan_duration)/resp_sample : end);  % one data point per 40ms
+s.resp_trig_during_scan = resp_trig(resp_trig > s.scan_start) - s.scan_start;     % time position of events in milliseconds
 
-plot(t(r),resp(r));
-
-trig_resp = readmatrix('RESPTrig_cni_epi_0220202113_25_28_493');
-
-lst = (trig_resp > r(1)) & (trig_resp < r(end));
-
-val = trig_resp(lst)*40;
-
-hold on;
-
-plot(val,ones(size(val))*3000,'ko');
-
-%% Write out simple summary of the 
-
+fid = fopen(fullfile(datadir, 'physio.json'), 'w');
+fprintf(fid, jsonencode(s, 'PrettyPrint', true));
+fclose(fid);
 %% END
