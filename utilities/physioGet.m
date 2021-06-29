@@ -26,7 +26,7 @@ param = mrvParamFormat(param);
 % If there is a filename, return it.
 if strcmp(param,'filename')
     if isfield(phy,'filename'), val = phy.filename; return; 
-    else error('No filename field');
+    else, error('No filename field');
     end
 end
 
@@ -51,21 +51,23 @@ switch param
         srate  = physioGet(phy,[dataType 'srate']);
         
         if isempty(varargin)
-        % we could use preset minimum interval
-%             if respFlag
-%                 interval = 2; 
-%             elseif ppgFlag 
-%                 interval = .7; 
-%             end
-        % but let's get it from the data:
+            % we could use preset minimum interval
+            %             
+            %  if respFlag
+            %      interval = 2;
+            %  elseif ppgFlag
+            %      interval = .7;
+            %  end
+            % but let's get it from the data:
             % find the peaks in the autocorrelation function:
             [peaks_ac,peaks_ac_i] = findpeaks(acf(obj.data,500));
             % the first maximum peak (zero is not included) is the first
             % autocorrelation time
-            [~,max_peaks_ac_i]=max(peaks_ac);
+            [~,max_peaks_ac_i] = max(peaks_ac);
             % set the interval at 70% of the ppg/resp rate:
             interval = .7 * peaks_ac_i(max_peaks_ac_i)/srate;
-        else interval = varargin{1};
+        else
+            interval = varargin{1};
         end
         
         % set minimum inter-heartbeat interval in seconds
