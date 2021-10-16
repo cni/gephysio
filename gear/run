@@ -1,0 +1,69 @@
+#! /usr/bin/env python
+
+import os
+import json
+
+# Parse a config file
+def parse_config(config_json_file):
+    """
+    Take a json file, read and return the contents
+    """
+
+    if not os.path.isfile(config_json_file):
+        raise ValueError('No config file could be found!')
+
+    # Read the config json file
+    with open(config_json_file, 'r') as jsonfile:
+        config = json.load(jsonfile)
+
+    return config
+
+if __name__ == '__main__':
+
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--config_file', type=str, dest="config_file", default='/flywheel/v0/config.json', help='Full path to the input json config file.')
+    ap.add_argument('--debug', '-d', type=bool, dest="debug", default=False, help='show debug print statements')
+    args = ap.parse_args()
+
+    config = parse_config(args.config_file)
+    flywheel_input = '/flywheel/v0/input/'
+
+    import flywheel
+
+    #import flywheel.GearContext as context
+    #context.init_logging()
+    #context.log_config()
+
+    fw = flywheel.Client(config['inputs']['api_key']['key']
+    acqID = config['inputs']['gephysio']['object']['hierachy']['id']
+    acquisition = fw.get_acquisition(acqID)
+
+    for f in acquisition['files']:
+        if f['type'] == 'nifti':
+            nvols = f.info['NumberOfTemporalPositions']
+            TR = f.info['RepetitionTime'] * 1000 # in milliseconds
+            break
+
+    # Establish time base for the PPG data
+    #niftiinfo = config['inputs']['nifti']['object']['info']
+    #TR = niftiinfo['RepititionTime']
+    #nvols = niftiinfo['NumberOfTemporalPositions']
+
+    # Flag for generating physio data plot
+    plot_flag = 1 if config['config']['plot'] else 0
+    plot_start = config['config']['plot_start']
+    plot_window = config['config']['plot_window']
+
+    # Unzip physio data 
+    physiofile = config['inputs']['gephysio']['location']['path']
+    print("physiofile: %s\n" % physiofile)
+    os.system(("unzip %s -d %s", % (flywheel_input, physiofile)))
+    physio_dir = flywheel_input+os.path.basename(physiofile)
+    print("physio_dir: %s\n" % physio_dir)
+    
+    cmd = ("run_gephysio.sh /opt/mcr/v95 %s %d %d %d %d %d" %( physio_dir, TR, nvols, plot_flag, plot_start, plot_window))
+    print(cmd)
+    os.system(cmd)
+
+

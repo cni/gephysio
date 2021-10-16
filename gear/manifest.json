@@ -1,0 +1,53 @@
+{
+	"name": "cni-gephysio",
+	"label": "cni-gephysio",
+	"description": "Created by the gear builder. Edit the manifest file to give this gear a description!",
+	"version": "0",
+	"inputs": {
+		"api-key": {
+			"base": "api-key"
+		},
+		"physio": {
+			"base": "file",
+			"description": ".",
+			"optional": false,
+			"type": {
+				"enum": [
+					"gephysio"
+				]
+			}
+		}
+	},
+	"config": {
+		"plot_start": {
+			"default": 0,
+			"description": "Starting time (ms) of the physio plot",
+			"type": "integer"
+		},
+		"plot_window": {
+			"default": 10000,
+			"description": "Window width (ms) of the physio plot",
+			"type": "integer"
+		},
+		"plot": {
+			"default": true,
+			"description": "Flag for plotting segment of physio data.",
+			"type": "boolean"
+		}
+	},
+	"environment": {
+		"LD_LIBRARY_PATH": "/opt/mcr/v95/runtime/glnxa64:/opt/mcr/v95/bin/glnxa64:/opt/mcr/v95/sys/os/glnxa64:/opt/mcr/v95/extern/bin/glnxa64",
+		"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	},
+	"author": "Hua Wu",
+	"maintainer": "Hua Wu",
+	"license": "Other",
+	"source": "",
+	"url": "",
+	"custom": {
+		"gear-builder": {
+			"category": "analysis",
+			"image": "cni/gephysio"
+		}
+	}
+}

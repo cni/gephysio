@@ -17,7 +17,14 @@ function [rawdata, syncdata, t_raw, t_sync, scanStart] = physioRead(fname, dt, s
 %   t_sync          time samples in the synced physio waveform. Ignored for trigger data
 %   scanStart       starting time of the scan, calculated from the waveform
 
-rawdata = readmatrix(fname,'leadingDelimitersRule','ignore');
+if verLessThan('matlab', '9.6')    % R2018b or earlier
+    fid = fopen(fname);
+    data = textscan(fid, '%f', 'Delimiter', '\n');
+    rawdata = data{1};
+    fclose(fid);
+else
+    rawdata = readmatrix(fname,'leadingDelimitersRule','ignore');
+end
 
 if strcmp(dataType, 'wave')
     syncdata = rawdata(end-round(scanDuration/dt)+1 : end);
