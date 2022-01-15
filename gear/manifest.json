@@ -1,8 +1,8 @@
 {
-	"name": "cni-gephysio",
-	"label": "cni-gephysio",
-	"description": "Created by the gear builder. Edit the manifest file to give this gear a description!",
-	"version": "0",
+	"name": "gephysio",
+	"label": "GE physio file converter",
+	"description": "A tool to synchronize the physiological recording from GE scanners to the fMRI time series. Also filters the raw data and finds the peaks in PPG and respiratory waveform.",
+	"version": "0.1.17",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
@@ -19,6 +19,11 @@
 		}
 	},
 	"config": {
+		"plot": {
+			"default": true,
+			"description": "Flag for plotting segment of physio data.",
+			"type": "boolean"
+		},
 		"plot_start": {
 			"default": 0,
 			"description": "Starting time (ms) of the physio plot",
@@ -28,14 +33,10 @@
 			"default": 10000,
 			"description": "Window width (ms) of the physio plot",
 			"type": "integer"
-		},
-		"plot": {
-			"default": true,
-			"description": "Flag for plotting segment of physio data.",
-			"type": "boolean"
 		}
 	},
 	"environment": {
+		"FLYWHEEL": "/flywheel/v0",
 		"LD_LIBRARY_PATH": "/opt/mcr/v95/runtime/glnxa64:/opt/mcr/v95/bin/glnxa64:/opt/mcr/v95/sys/os/glnxa64:/opt/mcr/v95/extern/bin/glnxa64",
 		"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 	},
@@ -45,9 +46,12 @@
 	"source": "",
 	"url": "",
 	"custom": {
+		"flywheel": {
+			"suite": "Stanford CNI"
+		},
 		"gear-builder": {
-			"category": "analysis",
-			"image": "cni/gephysio"
+			"category": "converter",
+			"image": "gephysio"
 		}
 	}
 }

@@ -1,27 +1,40 @@
-function gephysio(phys_dir, scan_TR, nvolumes, plot_flag, plot_start, plot_window, slice_timing)
+function gephysio(phys_dir, out_dir, scan_TR, nvolumes, plot_flag, plot_start, plot_window, slice_timing)
 %
 % Parse GE physio recordings, smooth the pulse oximetry and respiratory
 % waveform, and find peaks in the waveform.
 %
+% Input
+%   phys_dir            directory containing the physio files
+%   out_dir             output directory
+%   scan_TR             scan TR, in millisecond
+%   nvolumes            number of volumes, integer
+%   plot_flag           flag for plotting a segment of the physio data
+%   plot_start
+%   plot_window
+%   slice_timing        (not used)
 
-% Convert from string to number if running as compiled Matlab binary
-if exist('scan_TR', 'var') && ~isempty(scan_TR) && isa(scan_TR, 'char') 
-    scan_TR = str2num(scan_TR);
+if ~exist('out_dir','var') || isempty(out_dir)
+    out_dir = phys_dir;
 end
-if exist('nvolumes', 'var') && ~isempty(nvolumes) && isa(nvolumes, 'char')
-    nvolumes = str2num(nvolumes);
+% Convert from string to number if running as compiled Matlab binary
+if isdeployed 
+    scan_TR     = str2double(scan_TR);
+    nvolumes    = str2double(nvolumes);
+    plot_flag   = str2double(plot_flag);
+    plot_start  = str2double(plot_start);
+    plot_window = str2double(plot_window);
 end
 
 param.ppg.dt  = 10;       % PPG data samples at 10ms
 param.resp.dt = 40;       % Respiratory data samples  at 40 ms
 dirlist = dir(fullfile(phys_dir, 'PPGData*'));
-param.ppg.wave.fn  = dirlist.name;
+param.ppg.wave.fn  = fullfile(dirlist.folder, dirlist.name);
 dirlist = dir(fullfile(phys_dir, 'PPGTrig*'));
-param.ppg.trig.fn  = dirlist.name;
+param.ppg.trig.fn  = fullfile(dirlist.folder, dirlist.name);
 dirlist = dir(fullfile(phys_dir, 'RESPData*'));
-param.resp.wave.fn = dirlist.name;
+param.resp.wave.fn = fullfile(dirlist.folder, dirlist.name);
 dirlist = dir(fullfile(phys_dir, 'RESPTrig*'));
-param.resp.trig.fn = dirlist.name;
+param.resp.trig.fn = fullfile(dirlist.folder, dirlist.name);
 
 param.TR             = scan_TR;         % milliseconds
 param.nvols          = nvolumes;
@@ -84,7 +97,7 @@ for p = 1:numel(physioType)
     legend({'recorded waveform','smoothed waveform','recorded trigger','smoothed trigger'}, 'Location','south','NumColumns',2);legend('boxoff'); 
 end
 
-pdfname = fullfile(phys_dir, ['physio_' num2str(plot_start) '-' num2str(plot_end) 'ms.pdf']);
+pdfname = fullfile(out_dir, ['physio_' num2str(plot_start) '-' num2str(plot_end) 'ms.pdf']);
 saveas(h, pdfname);
 end
 
@@ -100,7 +113,7 @@ if verLessThan('matlab', '9.10')
 else
     str = jsonencode(param, 'PrettyPrint', true);
 end
-fid = fopen(fullfile(phys_dir, 'physio.json'), 'w');
+fid = fopen(fullfile(out_dir, 'physio.json'), 'w');
 fprintf(fid, str);
 fclose(fid);
 

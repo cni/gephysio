@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 import os
 import json
@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
     config = parse_config(args.config_file)
     flywheel_input = '/flywheel/v0/input/'
+    flywheel_output = '/flywheel/v0/output'
 
     import flywheel
 
@@ -35,14 +36,14 @@ if __name__ == '__main__':
     #context.init_logging()
     #context.log_config()
 
-    fw = flywheel.Client(config['inputs']['api_key']['key']
-    acqID = config['inputs']['gephysio']['object']['hierachy']['id']
+    fw = flywheel.Client(config['inputs']['api-key']['key'])
+    acqID = config['inputs']['physio']['hierarchy']['id']
     acquisition = fw.get_acquisition(acqID)
 
     for f in acquisition['files']:
-        if f['type'] == 'nifti':
+        if f['type'] == 'dicom':
             nvols = f.info['NumberOfTemporalPositions']
-            TR = f.info['RepetitionTime'] * 1000 # in milliseconds
+            TR = f.info['RepetitionTime']     # in milliseconds
             break
 
     # Establish time base for the PPG data
@@ -56,13 +57,13 @@ if __name__ == '__main__':
     plot_window = config['config']['plot_window']
 
     # Unzip physio data 
-    physiofile = config['inputs']['gephysio']['location']['path']
+    physiofile = config['inputs']['physio']['location']['path']
     print("physiofile: %s\n" % physiofile)
-    os.system(("unzip %s -d %s", % (flywheel_input, physiofile)))
-    physio_dir = flywheel_input+os.path.basename(physiofile)
+    os.system("unzip %s -d %s" % (physiofile, flywheel_input))
+    physio_dir = os.path.join(flywheel_input, os.path.splitext(os.path.basename(physiofile))[0])
     print("physio_dir: %s\n" % physio_dir)
     
-    cmd = ("run_gephysio.sh /opt/mcr/v95 %s %d %d %d %d %d" %( physio_dir, TR, nvols, plot_flag, plot_start, plot_window))
+    cmd = ("run_gephysio.sh /opt/mcr/v95 %s %s %d %d %d %d %d" %( physio_dir, flywheel_output, TR, nvols, plot_flag, plot_start, plot_window))
     print(cmd)
     os.system(cmd)
 
