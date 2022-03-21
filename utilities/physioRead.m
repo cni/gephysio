@@ -29,8 +29,8 @@ end
 if strcmp(dataType, 'wave')
     syncdata = rawdata(end-round(scanDuration/dt)+1 : end);
     scanStart = length(rawdata)*dt - scanDuration; % in milliseconds
-    t_sync = linspace(dt, scanDuration, numel(syncdata));
-    t_raw  = linspace(dt, length(rawdata)*dt, length(rawdata));
+    t_sync = linspace(dt, scanDuration, numel(syncdata))';   % column data
+    t_raw  = linspace(dt, length(rawdata)*dt, length(rawdata))';
 elseif strcmp(dataType, 'trig')
     if ~exist('scanStart', 'var')
         error('Must provide scan start time to align the triggers \n');
