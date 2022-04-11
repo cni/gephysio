@@ -136,13 +136,13 @@ for p = 1:numel(physioType)
     legend({'recorded signal','filtered signal','trigger'}, 'Location','south','NumColumns',3,'FontSize',10);legend('boxoff'); 
 
     % Programatically move the Legend
-%     hL = legend({'recorded signal','filtered signal','trigger'},'NumColumns',2);
-%     newPosition = [0.7 0.9 0.2 0.2];
-%     newUnits = 'normalized';
-%     set(hL,'Position', newPosition,'Units', newUnits, 'Box', 'off');
+    hL = legend({'recorded signal','filtered signal','trigger'},'NumColumns',2);
+    newPosition = [0.7 0.9 0.2 0.2];
+    newUnits = 'normalized';
+    set(hL,'Position', newPosition,'Units', newUnits, 'Box', 'off');
     
     fname = fullfile(out_dir, sprintf('%s_SampSig', physioType{p}));
-    print(fname, '-dpdf', '-fillpage');
+    print(fname, '-dpng');
 
 end
 
@@ -161,7 +161,7 @@ end
 % Write filted signal and detected peaks to text files. Save the filtered
 % signal as integers and peaks are rounded to millisecond
 for p = 1:numel(physioType)
-    dlmwrite(fullfile(out_dir, sprintf('%s_FltData.csv',physioType{p})), [param.(physioType{p}).wave.t_sync, param.(physioType{p}).wave.data_filt, param.(physioType{p}).trig.filter_flag], 'precision', '%d');
+    dlmwrite(fullfile(out_dir, sprintf('%s_FltData.csv',physioType{p})), [param.(physioType{p}).wave.t_sync, param.(physioType{p}).wave.data_filt], 'precision', '%d');
     dlmwrite(fullfile(out_dir, sprintf('%s_FltTrig.csv',physioType{p})), int64(param.(physioType{p}).trig.data_filt), 'precision', '%d');
     fid = fopen(fullfile(out_dir, sprintf('%s_Stat.csv',physioType{p})), 'w');
     fprintf(fid, 'Scan duration (s): %.1f\n', param.scan_duration/1000);
