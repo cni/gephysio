@@ -1,4 +1,4 @@
-function gephysio(phys_dir, out_dir, scan_TR, nvolumes, plot_flag, plot_start, plot_window, slice_timing)
+function gephysio(phys_dir, out_dir, scan_TR, nvolumes, plot_flag, plot_start, plot_window, ppg_dt, resp_dt, slice_timing)
 %
 % Parse GE physio recordings, smooth the pulse oximetry and respiratory
 % waveform, and find peaks in the waveform.
@@ -11,6 +11,8 @@ function gephysio(phys_dir, out_dir, scan_TR, nvolumes, plot_flag, plot_start, p
 %   plot_flag           flag for plotting a segment of the physio data
 %   plot_start
 %   plot_window
+%   ppg_dt              PPG data sampling window (ms)
+%   resp_dt             respiratory data sampling window (ms)
 %   slice_timing        (not used)
 
 if ~exist('out_dir','var') || isempty(out_dir)
@@ -23,10 +25,14 @@ if isdeployed
     plot_flag   = str2double(plot_flag);
     plot_start  = str2double(plot_start);
     plot_window = str2double(plot_window);
+    ppg_dt      = str2double(ppg_dt);
+    resp_dt     = str2double(resp_dt);
 end
-
-param.PPG.dt  = 10;       % PPG data samples at 10ms
-param.RESP.dt = 40;       % Respiratory data samples  at 40 ms
+if ~exist('ppg_dt', 'var') || isempty(ppg_dt), ppg_dt = 10; end
+if ~exist('resp_dt', 'var') || isempty(resp_dt), resp_dt = 40; end
+ 
+param.PPG.dt  = ppg_dt;        % PPG data samples at 10ms
+param.RESP.dt = resp_dt;       % Respiratory data samples  at 40 ms
 dirlist = dir(fullfile(phys_dir, 'PPGData*'));
 param.PPG.wave.fn  = fullfile(dirlist.folder, dirlist.name);
 dirlist = dir(fullfile(phys_dir, 'PPGTrig*'));
@@ -49,13 +55,16 @@ end
 physioType = {'PPG', 'RESP'};
 
 % First read in the waveform data to determine the total length of the recording,
-% then trim the trigger data accordingly
 for p = 1:numel(physioType)
     [param.(physioType{p}).wave.data_raw, param.(physioType{p}).wave.data_sync, ...
         param.(physioType{p}).wave.t_raw, param.(physioType{p}).wave.t_sync, param.scanStart] = ...
-        physioRead(param.(physioType{p}).wave.fn, param.(physioType{p}).dt, param.scan_duration, 'wave');
-end
+        physioRead(param.(physioType{p}).wave.fn, param.(physioType{p}).dt, param.scan_duration, 'wave');    
+    % scale the sync waveform to [0, 1]
+    param.(physioType{p}).wave.data_sync = double(param.(physioType{p}).wave.data_sync - min(param.(physioType{p}).wave.data_sync)) / ...
+        (max(param.(physioType{p}).wave.data_sync) - min(param.(physioType{p}).wave.data_sync));
 
+end
+% then trim the trigger data accordingly
 for p = 1:numel(physioType)
     [param.(physioType{p}).trig.data_raw, param.(physioType{p}).trig.data_sync,~,~,~] = ...
         physioRead(param.(physioType{p}).trig.fn, param.(physioType{p}).dt, param.scan_duration, 'trig', param.scanStart);
@@ -66,8 +75,13 @@ for p = 1:numel(physioType)
     [param.(physioType{p}).trig.data_filt, param.(physioType{p}).wave.data_filt] = ...
         physioPeaks(param.(physioType{p}).wave.data_sync, param.(physioType{p}).dt);
 end
-
-
+% set up a flag array for the the detected peaks
+for p = 1:numel(physioType)
+    param.(physioType{p}).trig.filter_flag = zeros(size(param.(physioType{p}).wave.t_sync));
+    [~,loc] = ismember(round(param.(physioType{p}).trig.data_filt), param.(physioType{p}).wave.t_sync);
+    param.(physioType{p}).trig.filter_flag(loc) = 1;
+end
+    
 %% Plot a segment of the data
 if exist('plot_flag', 'var') && plot_flag
 
@@ -132,6 +146,7 @@ for p = 1:numel(physioType)
 
 end
 
+close all;  % close all figures
 end
 
 %% Write out simple summary of the data
@@ -146,7 +161,7 @@ end
 % Write filted signal and detected peaks to text files. Save the filtered
 % signal as integers and peaks are rounded to millisecond
 for p = 1:numel(physioType)
-    dlmwrite(fullfile(out_dir, sprintf('%s_FltData.csv',physioType{p})), [int64(param.(physioType{p}).wave.data_filt), param.(physioType{p}).wave.t_sync], 'precision', '%d');
+    dlmwrite(fullfile(out_dir, sprintf('%s_FltData.csv',physioType{p})), [param.(physioType{p}).wave.t_sync, param.(physioType{p}).wave.data_filt, param.(physioType{p}).trig.filter_flag], 'precision', '%d');
     dlmwrite(fullfile(out_dir, sprintf('%s_FltTrig.csv',physioType{p})), int64(param.(physioType{p}).trig.data_filt), 'precision', '%d');
     fid = fopen(fullfile(out_dir, sprintf('%s_Stat.csv',physioType{p})), 'w');
     fprintf(fid, 'Scan duration (s): %.1f\n', param.scan_duration/1000);
