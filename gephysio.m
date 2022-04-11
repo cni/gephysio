@@ -143,10 +143,11 @@ for p = 1:numel(physioType)
         mean(param.(physioType{p}).trig.dtrig)) < 3 * std(param.(physioType{p}).trig.dtrig))); 
 end
 
-% Write filted signal and detected peaks to text files. Save the filtered signal as integers
+% Write filted signal and detected peaks to text files. Save the filtered
+% signal as integers and peaks are rounded to millisecond
 for p = 1:numel(physioType)
-    dlmwrite(fullfile(out_dir, sprintf('%s_FltData.csv',physioType{p})), [int16(param.(physioType{p}).wave.data_filt), param.(physioType{p}).wave.t_sync], 'precision', '%d');
-    dlmwrite(fullfile(out_dir, sprintf('%s_FltTrig.csv',physioType{p})), param.(physioType{p}).trig.data_filt, 'precision', '%d');
+    dlmwrite(fullfile(out_dir, sprintf('%s_FltData.csv',physioType{p})), [int64(param.(physioType{p}).wave.data_filt), param.(physioType{p}).wave.t_sync], 'precision', '%d');
+    dlmwrite(fullfile(out_dir, sprintf('%s_FltTrig.csv',physioType{p})), int64(param.(physioType{p}).trig.data_filt), 'precision', '%d');
     fid = fopen(fullfile(out_dir, sprintf('%s_Stat.csv',physioType{p})), 'w');
     fprintf(fid, 'Scan duration (s): %.1f\n', param.scan_duration/1000);
     fprintf(fid, 'Number of peaks detected: %d\n', length(param.(physioType{p}).trig.data_filt));

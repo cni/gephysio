@@ -1,8 +1,8 @@
 {
 	"name": "gephysio",
-	"label": "GE physio file converter",
-	"description": "A tool to synchronize the physiological recording from GE scanners to the fMRI time series. Also filters the raw data and finds the peaks in PPG and respiratory waveform.",
-	"version": "0.1.17",
+	"label": "CNI GE Physio File Converter",
+	"description": "A tool to synchronize the physiological recording from GE scanners to the fMRI time series. Also filters the raw data and finds the peaks in PPG and respiratory waveform using the bandpass filter developed by Dora Hermes (see also https://github.com/vistalab/BrainBeat).",
+	"version": "0.2.0",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
@@ -19,17 +19,17 @@
 		}
 	},
 	"config": {
-		"plot": {
+		"Snapshot": {
 			"default": true,
-			"description": "Flag for plotting segment of physio data.",
+			"description": "Flag for plotting segments of physio data. Generates a pdf file of three plots, each showing a snapshot of the data at the beginning, middle, end of the fMRI scan.",
 			"type": "boolean"
 		},
-		"plot_start": {
+		"start_time": {
 			"default": 0,
 			"description": "Starting time (ms) of the physio plot",
 			"type": "integer"
 		},
-		"plot_window": {
+		"window_length": {
 			"default": 10000,
 			"description": "Window width (ms) of the physio plot",
 			"type": "integer"
@@ -44,14 +44,14 @@
 	"maintainer": "Hua Wu",
 	"license": "Other",
 	"source": "",
-	"url": "",
+	"url": "https://github.com/cni/gephysio",
 	"custom": {
+		"gear-builder": {
+			"category": "analysis",
+			"image": "gephysio"
+		},
 		"flywheel": {
 			"suite": "Stanford CNI"
-		},
-		"gear-builder": {
-			"category": "converter",
-			"image": "gephysio"
 		}
 	}
 }

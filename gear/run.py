@@ -52,9 +52,9 @@ if __name__ == '__main__':
     #nvols = niftiinfo['NumberOfTemporalPositions']
 
     # Flag for generating physio data plot
-    plot_flag = 1 if config['config']['plot'] else 0
-    plot_start = config['config']['plot_start']
-    plot_window = config['config']['plot_window']
+    plot_flag = 1 if config['config']['Snapshot'] else 0
+    plot_start = config['config']['start_time']
+    plot_window = config['config']['window_length']
 
     # Unzip physio data 
     physiofile = config['inputs']['physio']['location']['path']
