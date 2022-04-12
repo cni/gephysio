@@ -2,7 +2,7 @@
 	"name": "gephysio",
 	"label": "CNI GE Physio File Converter",
 	"description": "A tool to synchronize the physiological recording from GE scanners to the fMRI time series. Also filters the raw data and finds the peaks in PPG and respiratory waveform using the bandpass filter developed by Dora Hermes (see also https://github.com/vistalab/BrainBeat).",
-	"version": "0.2.0",
+	"version": "0.2.5",
 	"inputs": {
 		"api-key": {
 			"base": "api-key"
@@ -19,6 +19,16 @@
 		}
 	},
 	"config": {
+		"sampling_time_PPG": {
+			"default": 10,
+			"description": "Sampling time (ms) of the PPG data, GE scanner default is 10ms",
+			"type": "integer"
+		},
+		"sampling_time_RESP": {
+			"default": 40,
+			"description": "Sampling time (ms) of the respiratory data, GE scanner default is 40ms",
+			"type": "integer"
+		},
 		"Snapshot": {
 			"default": true,
 			"description": "Flag for plotting segments of physio data. Generates a pdf file of three plots, each showing a snapshot of the data at the beginning, middle, end of the fMRI scan.",
@@ -42,8 +52,8 @@
 	},
 	"author": "Hua Wu",
 	"maintainer": "Hua Wu",
-	"license": "Other",
-	"source": "",
+	"license": "MIT",
+	"source": "https://github.com/cni/gephysio",
 	"url": "https://github.com/cni/gephysio",
 	"custom": {
 		"gear-builder": {

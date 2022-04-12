@@ -18,6 +18,8 @@ function gephysio(phys_dir, out_dir, scan_TR, nvolumes, plot_flag, plot_start, p
 if ~exist('out_dir','var') || isempty(out_dir)
     out_dir = phys_dir;
 end
+if ~exist('ppg_dt', 'var') || isempty(ppg_dt), ppg_dt = 10; end
+if ~exist('resp_dt', 'var') || isempty(resp_dt), resp_dt = 40; end
 % Convert from string to number if running as compiled Matlab binary
 if isdeployed 
     scan_TR     = str2double(scan_TR);
@@ -28,8 +30,6 @@ if isdeployed
     ppg_dt      = str2double(ppg_dt);
     resp_dt     = str2double(resp_dt);
 end
-if ~exist('ppg_dt', 'var') || isempty(ppg_dt), ppg_dt = 10; end
-if ~exist('resp_dt', 'var') || isempty(resp_dt), resp_dt = 40; end
  
 param.PPG.dt  = ppg_dt;        % PPG data samples at 10ms
 param.RESP.dt = resp_dt;       % Respiratory data samples  at 40 ms
@@ -136,10 +136,10 @@ for p = 1:numel(physioType)
     legend({'recorded signal','filtered signal','trigger'}, 'Location','south','NumColumns',3,'FontSize',10);legend('boxoff'); 
 
     % Programatically move the Legend
-    hL = legend({'recorded signal','filtered signal','trigger'},'NumColumns',2);
-    newPosition = [0.7 0.9 0.2 0.2];
-    newUnits = 'normalized';
-    set(hL,'Position', newPosition,'Units', newUnits, 'Box', 'off');
+    % hL = legend({'recorded signal','filtered signal','trigger'},'NumColumns',2);
+    % newPosition = [0.7 0.9 0.2 0.2];
+    % newUnits = 'normalized';
+    % set(hL,'Position', newPosition,'Units', newUnits, 'Box', 'off');
     
     fname = fullfile(out_dir, sprintf('%s_SampSig', physioType{p}));
     print(fname, '-dpng');

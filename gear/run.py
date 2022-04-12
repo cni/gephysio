@@ -51,6 +51,9 @@ if __name__ == '__main__':
     #TR = niftiinfo['RepititionTime']
     #nvols = niftiinfo['NumberOfTemporalPositions']
 
+    dt_ppg  = config['config']['sampling_time_ppg']
+    dt_resp = config['config']['sampling_time_resp']
+    
     # Flag for generating physio data plot
     plot_flag = 1 if config['config']['Snapshot'] else 0
     plot_start = config['config']['start_time']
@@ -63,7 +66,7 @@ if __name__ == '__main__':
     physio_dir = os.path.join(flywheel_input, os.path.splitext(os.path.basename(physiofile))[0])
     print("physio_dir: %s\n" % physio_dir)
     
-    cmd = ("run_gephysio.sh /opt/mcr/v95 %s %s %d %d %d %d %d" %( physio_dir, flywheel_output, TR, nvols, plot_flag, plot_start, plot_window))
+    cmd = ("run_gephysio.sh /opt/mcr/v95 %s %s %d %d %d %d %d %d %d" %( physio_dir, flywheel_output, TR, nvols, plot_flag, plot_start, plot_window, dt_ppg, dt_resp))
     print(cmd)
     os.system(cmd)
 
